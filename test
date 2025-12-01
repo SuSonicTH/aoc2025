@@ -1,0 +1,2 @@
+#!/bin/bash
+zig test src/2025/day${1}.zig

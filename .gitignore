@@ -1,0 +1,4 @@
+.token
+.zig-cache/
+zig-out/
+src/*/*.txt

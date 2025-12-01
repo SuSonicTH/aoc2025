@@ -1,0 +1,3 @@
+#!/bin/bash
+zig build run -Dday=${1} -Doptimize=ReleaseFast
+

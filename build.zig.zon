@@ -1,0 +1,17 @@
+.{
+    .name = .aoc2025,
+    .version = "0.0.0",
+    .fingerprint = 0x52176dd5ed17d7b2, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .aozig = .{
+            .url = "git+https://github.com/Sh4d1/aozig?ref=main#bc02a0abc1689c91ba4a8a88f6ff491fc9ecf8c0",
+            .hash = "aozig-0.1.0-hh4xmsmaAQCunJvRpXRQmV1yBbILTcHBC1o_MGDweYza",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
