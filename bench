@@ -1,2 +1,9 @@
 #!/bin/bash
-zig build run -Dday=${1} -Doptimize=ReleaseFast -- bench 100
+
+DAY=""
+if [ $# -ne 0 ]; then
+    DAY="-Dday=$1"
+fi
+
+zig build run $DAY -Doptimize=ReleaseFast -- bench 100
+

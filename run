@@ -1,3 +1,8 @@
 #!/bin/bash
-zig build run -Dday=${1} -Doptimize=ReleaseFast
 
+DAY=""
+if [ $# -ne 0 ]; then
+    DAY="-Dday=$1"
+fi
+
+zig build run $DAY -Doptimize=ReleaseFast

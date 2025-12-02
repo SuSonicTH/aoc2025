@@ -1,2 +1,8 @@
 #!/bin/bash
-zig test src/2025/day${1}.zig
+
+if [ $# -ne 0 ]; then
+    zig test src/2025/day${1}.zig
+else
+    echo "expecting day as argument i.e. ./run 2"
+fi
+
