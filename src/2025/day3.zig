@@ -12,7 +12,7 @@ pub fn solve1(input: []const u8) usize {
     var banks = std.mem.tokenizeScalar(u8, input, '\n');
     var res: usize = 0;
     while (banks.next()) |bank| {
-        res += maxJoltage2(bank);
+        res += try maxJoltage(bank, 2);
     }
     return res;
 }
@@ -41,26 +41,44 @@ pub fn solve2(input: []const u8) !usize {
     var banks = std.mem.tokenizeScalar(u8, input, '\n');
     var res: usize = 0;
     while (banks.next()) |bank| {
-        res += try maxJoltage12(bank);
+        res += try maxJoltage(bank, 12);
     }
     return res;
 }
 
-fn maxJoltage12(bank: []const u8) !usize {
-    var used: [12]u8 = undefined;
-    var last: usize = 0;
+const pow10: [12]usize = .{
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
+    10000000000,
+    100000000000,
+};
 
-    for (0..12) |batt| {
-        used[batt] = bank[last];
-        for (last + 1..bank.len - 11 + batt) |pos| {
-            if (bank[pos] > used[batt]) {
-                used[batt] = bank[pos];
+fn maxJoltage(bank: []const u8, batteries: u8) !usize {
+    var last: usize = 0;
+    var ret: usize = 0;
+    var candidate: u8 = undefined;
+
+    for (0..batteries) |battery| {
+        candidate = bank[last];
+        for (last + 1..bank.len - batteries + 1 + battery) |pos| {
+            if (bank[pos] > candidate) {
+                candidate = bank[pos];
                 last = pos;
             }
         }
+        ret += pow10[11 - battery] * (candidate - '0');
         last += 1;
     }
-    return try std.fmt.parseInt(usize, &used, 10);
+
+    return ret;
 }
 
 test "example" {
@@ -71,17 +89,17 @@ test "example" {
         \\818181911112111
     ;
 
-    try std.testing.expectEqual(@as(usize, 98), maxJoltage2("987654321111111"));
-    try std.testing.expectEqual(@as(usize, 89), maxJoltage2("811111111111119"));
-    try std.testing.expectEqual(@as(usize, 78), maxJoltage2("234234234234278"));
-    try std.testing.expectEqual(@as(usize, 92), maxJoltage2("818181911112111"));
+    try std.testing.expectEqual(@as(usize, 98), try maxJoltage("987654321111111", 2));
+    try std.testing.expectEqual(@as(usize, 89), try maxJoltage("811111111111119", 2));
+    try std.testing.expectEqual(@as(usize, 78), try maxJoltage("234234234234278", 2));
+    try std.testing.expectEqual(@as(usize, 92), try maxJoltage("818181911112111", 2));
 
     try std.testing.expectEqual(@as(usize, 357), solve1(input));
 
-    try std.testing.expectEqual(@as(usize, 987654321111), try maxJoltage12("987654321111111"));
-    try std.testing.expectEqual(@as(usize, 811111111119), try maxJoltage12("811111111111119"));
-    try std.testing.expectEqual(@as(usize, 434234234278), try maxJoltage12("234234234234278"));
-    try std.testing.expectEqual(@as(usize, 888911112111), try maxJoltage12("818181911112111"));
+    try std.testing.expectEqual(@as(usize, 987654321111), try maxJoltage("987654321111111", 12));
+    try std.testing.expectEqual(@as(usize, 811111111119), try maxJoltage("811111111111119", 12));
+    try std.testing.expectEqual(@as(usize, 434234234278), try maxJoltage("234234234234278", 12));
+    try std.testing.expectEqual(@as(usize, 888911112111), try maxJoltage("818181911112111", 12));
 
     try std.testing.expectEqual(@as(usize, 3121910778619), try solve2(input));
 }
