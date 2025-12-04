@@ -34,14 +34,17 @@ pub fn set(self: *Self, x: usize, y: usize, v: u8) void {
     self.grid[y * (self.width + 1) + x] = v;
 }
 
+const adjecendLook: [3]i2 = .{ -1, 0, 1 };
+
 pub fn countAdjacent(self: *Self, x: usize, y: usize, i: u8) usize {
     var count: usize = 0;
-    inline for (0..3) |yv| {
-        inline for (0..3) |xv| {
-            const yc: i64 = @as(i64, @intCast(y)) + @as(i64, @intCast(yv)) - 1;
-            const xc: i64 = @as(i64, @intCast(x)) + @as(i64, @intCast(xv)) - 1;
+    inline for (adjecendLook) |yv| {
+        inline for (adjecendLook) |xv| {
+            if (xv == 0 and yv == 0) continue;
 
-            if (xc >= 0 and yc >= 0 and (xv != 1 or yv != 1)) {
+            const yc: i64 = @as(i64, @intCast(y)) + yv;
+            const xc: i64 = @as(i64, @intCast(x)) + xv;
+            if (xc >= 0 and yc >= 0) {
                 if (self.get(@as(usize, @intCast(xc)), @as(usize, @intCast(yc))) == i) {
                     count += 1;
                 }
