@@ -1,12 +1,12 @@
 const std = @import("std");
-const Self = @This();
+const Grid = @This();
 
 allocator: std.mem.Allocator,
 grid: []u8,
 width: usize,
 height: usize,
 
-pub fn init(input: []const u8, allocator: std.mem.Allocator) !Self {
+pub fn init(input: []const u8, allocator: std.mem.Allocator) !Grid {
     const rowLen = std.mem.indexOfScalar(u8, input, '\n').?;
     return .{
         .allocator = allocator,
@@ -16,34 +16,33 @@ pub fn init(input: []const u8, allocator: std.mem.Allocator) !Self {
     };
 }
 
-pub fn deinit(self: *Self) void {
+pub fn deinit(self: *Grid) void {
     self.allocator.free(self.grid);
 }
 
-pub fn get(self: *Self, x: usize, y: usize) u8 {
+pub fn get(self: *Grid, x: usize, y: usize) u8 {
     if (x >= self.width or y >= self.height) {
         return 0;
     }
     return self.grid[y * (self.width + 1) + x];
 }
 
-pub fn set(self: *Self, x: usize, y: usize, v: u8) void {
+pub fn set(self: *Grid, x: usize, y: usize, v: u8) void {
     if (x >= self.width or y >= self.height) {
         return;
     }
     self.grid[y * (self.width + 1) + x] = v;
 }
 
-const adjecendLook: [3]i2 = .{ -1, 0, 1 };
-
-pub fn countAdjacent(self: *Self, x: usize, y: usize, i: u8) usize {
+pub fn countAdjacent(self: *Grid, x: usize, y: usize, i: u8) usize {
     var count: usize = 0;
-    inline for (adjecendLook) |yv| {
-        inline for (adjecendLook) |xv| {
+    inline for ([_]i2{ -1, 0, 1 }) |yv| {
+        inline for ([_]i2{ -1, 0, 1 }) |xv| {
             if (xv == 0 and yv == 0) continue;
 
             const yc: i64 = @as(i64, @intCast(y)) + yv;
             const xc: i64 = @as(i64, @intCast(x)) + xv;
+
             if (xc >= 0 and yc >= 0) {
                 if (self.get(@as(usize, @intCast(xc)), @as(usize, @intCast(yc))) == i) {
                     count += 1;
@@ -62,7 +61,7 @@ const testInput =
 ;
 
 test "init,size,deinit" {
-    var grid = try Self.init(testInput, std.testing.allocator);
+    var grid = try Grid.init(testInput, std.testing.allocator);
     defer grid.deinit();
 
     try std.testing.expectEqual(5, grid.width);
@@ -70,7 +69,7 @@ test "init,size,deinit" {
 }
 
 test "get" {
-    var grid = try Self.init(testInput, std.testing.allocator);
+    var grid = try Grid.init(testInput, std.testing.allocator);
     defer grid.deinit();
 
     try std.testing.expectEqual('A', grid.get(0, 0));
@@ -86,7 +85,7 @@ test "get" {
 }
 
 test "set" {
-    var grid = try Self.init(testInput, std.testing.allocator);
+    var grid = try Grid.init(testInput, std.testing.allocator);
     defer grid.deinit();
 
     grid.set(0, 0, 'a');
@@ -118,7 +117,7 @@ test "countAdjacent" {
         \\xxx..
         \\.....
     ;
-    var grid = try Self.init(input, std.testing.allocator);
+    var grid = try Grid.init(input, std.testing.allocator);
     defer grid.deinit();
 
     try std.testing.expectEqual(@as(usize, 2), grid.countAdjacent(0, 0, 'x'));

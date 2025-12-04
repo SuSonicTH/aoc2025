@@ -5,14 +5,13 @@ const stdout = @import("stdout.zig");
 
 pub var alloc: std.mem.Allocator = undefined;
 
-pub fn parse(input: []const u8) ![]const u8 {
-    return input;
+pub fn parse(input: []const u8) !*Grid {
+    const ptr = try alloc.create(Grid);
+    ptr.* = try Grid.init(input, alloc);
+    return ptr;
 }
 
-pub fn solve1(input: []const u8) !usize {
-    var grid = try Grid.init(input, std.heap.page_allocator);
-    defer grid.deinit();
-
+pub fn solve1(grid: *Grid) !usize {
     var count: usize = 0;
     for (0..grid.height) |y| {
         for (0..grid.width) |x| {
@@ -29,12 +28,9 @@ const Pos = struct {
     y: usize,
 };
 
-pub fn solve2(input: []const u8) !usize {
-    var grid = try Grid.init(input, std.heap.page_allocator);
-    defer grid.deinit();
-
+pub fn solve2(grid: *Grid) !usize {
     var count: usize = 0;
-    var candidates = std.array_list.AlignedManaged(Pos, null).init(std.heap.page_allocator);
+    var candidates = std.array_list.AlignedManaged(Pos, null).init(alloc);
     defer candidates.deinit();
 
     while (true) {
@@ -58,6 +54,7 @@ pub fn solve2(input: []const u8) !usize {
 }
 
 test "example" {
+    alloc = std.testing.allocator;
     const input =
         \\..@@.@@@@.
         \\@@@.@.@.@@
@@ -71,6 +68,10 @@ test "example" {
         \\@.@.@@@.@.
     ;
 
-    try std.testing.expectEqual(@as(usize, 13), try solve1(input));
-    try std.testing.expectEqual(@as(usize, 43), try solve2(input));
+    var grid: *Grid = try parse(input);
+    defer alloc.destroy(grid);
+    defer grid.deinit();
+
+    try std.testing.expectEqual(@as(usize, 13), try solve1(grid));
+    try std.testing.expectEqual(@as(usize, 43), try solve2(grid));
 }
