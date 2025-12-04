@@ -1,7 +1,6 @@
 const std = @import("std");
 const aozig = @import("aozig");
 const Grid = @import("Grid.zig");
-const stdout = @import("stdout.zig");
 
 pub var alloc: std.mem.Allocator = undefined;
 
