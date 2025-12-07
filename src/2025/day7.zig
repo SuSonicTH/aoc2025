@@ -1,7 +1,6 @@
 const std = @import("std");
 const aozig = @import("aozig");
 const Grid = @import("Grid.zig");
-const stdout = @import("stdout.zig");
 
 pub var alloc: std.mem.Allocator = undefined;
 
@@ -12,47 +11,50 @@ pub fn parse(input: []const u8) !*Grid {
 }
 
 pub fn solve1(grid: *Grid) !usize {
-    var beams = std.array_list.AlignedManaged(usize, null).init(std.heap.page_allocator);
-    defer beams.deinit();
-
-    var newBeams = std.array_list.AlignedManaged(usize, null).init(std.heap.page_allocator);
-    defer newBeams.deinit();
+    var beams = try alloc.alloc(bool, grid.width);
+    defer alloc.free(beams);
+    @memset(beams, false);
 
     const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
-    try beams.append(start);
+    beams[start] = true;
 
-    var splited: usize = 0;
+    var split: usize = 0;
     for (1..grid.height - 1) |y| {
-        for (beams.items) |x| {
-            if (grid.get(x, y) == '^') {
-                splited += 1;
-                if (!contains(newBeams.items, x - 1)) try newBeams.append(x - 1);
-                if (!contains(newBeams.items, x + 1)) try newBeams.append(x + 1);
-            } else {
-                if (!contains(newBeams.items, x)) try newBeams.append(x);
+        for (0..grid.width) |x| {
+            if (grid.get(x, y) == '^' and beams[x]) {
+                split += 1;
+                beams[x - 1] = true;
+                beams[x + 1] = true;
+                beams[x] = false;
             }
         }
-        const tmp = beams;
-        beams = newBeams;
-        newBeams = tmp;
-
-        newBeams.clearRetainingCapacity();
     }
-    return splited;
+    return split;
 }
 
-fn contains(beams: []usize, item: usize) bool {
-    for (beams) |beam| {
-        if (beam == item) {
-            return true;
+pub fn solve2(grid: *Grid) !usize {
+    var beams = try alloc.alloc(usize, grid.width);
+    defer alloc.free(beams);
+    @memset(beams, 0);
+
+    const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
+    beams[start] = 1;
+
+    for (1..grid.height - 1) |y| {
+        for (0..grid.width) |x| {
+            if (grid.get(x, y) == '^') {
+                beams[x - 1] += beams[x];
+                beams[x + 1] += beams[x];
+                beams[x] = 0;
+            }
         }
     }
-    return false;
-}
 
-pub fn solve2(grid: *Grid) usize {
-    _ = grid;
-    return 0;
+    var timelines: usize = 0;
+    for (beams) |beam| {
+        timelines += beam;
+    }
+    return timelines;
 }
 
 test "example" {
@@ -80,5 +82,5 @@ test "example" {
     defer grid.deinit();
 
     try std.testing.expectEqual(@as(usize, 21), try solve1(grid));
-    try std.testing.expectEqual(@as(usize, 0), solve2(grid));
+    try std.testing.expectEqual(@as(usize, 40), try solve2(grid));
 }
