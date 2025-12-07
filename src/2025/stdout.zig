@@ -12,6 +12,16 @@ pub fn getWriter() *std.Io.Writer {
     return stdout_writer_interface;
 }
 
+pub fn print(comptime fmt: []const u8, args: anytype) void {
+    getWriter().print(fmt, args) catch @panic("Could not print to stdout");
+}
+
+pub fn printfl(comptime fmt: []const u8, args: anytype) void {
+    var writer = getWriter();
+    writer.print(fmt, args) catch @panic("Could not print to stdout");
+    writer.flush() catch @panic("could not flush to stdout");
+}
+
 pub fn flush() void {
     getWriter().flush() catch @panic("could not flush to stdout");
 }
