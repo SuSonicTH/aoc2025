@@ -96,11 +96,7 @@ fn rangeSort(_: void, a: Range, b: Range) bool {
 
 pub fn main() !void {
     const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
-    const input = @embedFile(day ++ ".txt");
-    const allocator = std.heap.smp_allocator;
-
-    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
-    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+    try @import("main.zig").aocRun(day, stdout, part1, part2);
 }
 
 test "example" {
