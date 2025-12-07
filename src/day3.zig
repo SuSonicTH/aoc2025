@@ -1,13 +1,9 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 
-pub var alloc: std.mem.Allocator = undefined;
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    _ = allocator;
 
-pub fn parse(input: []const u8) ![]const u8 {
-    return input;
-}
-
-pub fn solve1(input: []const u8) usize {
     var banks = std.mem.tokenizeScalar(u8, input, '\n');
     var res: usize = 0;
     while (banks.next()) |bank| {
@@ -36,7 +32,8 @@ fn maxJoltage2(bank: []const u8) usize {
     return (bank[max1] - '0') * 10 + (bank[max2] - '0');
 }
 
-pub fn solve2(input: []const u8) !usize {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    _ = allocator;
     var banks = std.mem.tokenizeScalar(u8, input, '\n');
     var res: usize = 0;
     while (banks.next()) |bank| {
@@ -73,11 +70,20 @@ fn maxJoltage(bank: []const u8, batteries: u8) !usize {
                 last = pos;
             }
         }
-        ret += pow10[11 - battery] * (candidate - '0');
+        ret += pow10[batteries - 1 - battery] * (candidate - '0');
         last += 1;
     }
 
     return ret;
+}
+
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
 }
 
 test "example" {
@@ -87,18 +93,20 @@ test "example" {
         \\234234234234278
         \\818181911112111
     ;
+    const allocator = std.testing.allocator;
 
+    try std.testing.expectEqual(@as(usize, 357), try part1(input, allocator));
+    try std.testing.expectEqual(@as(usize, 3121910778619), try part2(input, allocator));
+}
+
+test "maxJoltage" {
     try std.testing.expectEqual(@as(usize, 98), try maxJoltage("987654321111111", 2));
     try std.testing.expectEqual(@as(usize, 89), try maxJoltage("811111111111119", 2));
     try std.testing.expectEqual(@as(usize, 78), try maxJoltage("234234234234278", 2));
     try std.testing.expectEqual(@as(usize, 92), try maxJoltage("818181911112111", 2));
 
-    try std.testing.expectEqual(@as(usize, 357), solve1(input));
-
     try std.testing.expectEqual(@as(usize, 987654321111), try maxJoltage("987654321111111", 12));
     try std.testing.expectEqual(@as(usize, 811111111119), try maxJoltage("811111111111119", 12));
     try std.testing.expectEqual(@as(usize, 434234234278), try maxJoltage("234234234234278", 12));
     try std.testing.expectEqual(@as(usize, 888911112111), try maxJoltage("818181911112111", 12));
-
-    try std.testing.expectEqual(@as(usize, 3121910778619), try solve2(input));
 }

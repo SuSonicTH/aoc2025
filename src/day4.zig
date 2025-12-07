@@ -1,16 +1,11 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 const Grid = @import("Grid.zig");
 
-pub var alloc: std.mem.Allocator = undefined;
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var grid = try Grid.init(input, allocator);
+    defer grid.deinit();
 
-pub fn parse(input: []const u8) !*Grid {
-    const ptr = try alloc.create(Grid);
-    ptr.* = try Grid.init(input, alloc);
-    return ptr;
-}
-
-pub fn solve1(grid: *Grid) !usize {
     var count: usize = 0;
     for (0..grid.height) |y| {
         for (0..grid.width) |x| {
@@ -27,9 +22,12 @@ const Pos = struct {
     y: usize,
 };
 
-pub fn solve2(grid: *Grid) !usize {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var grid = try Grid.init(input, allocator);
+    defer grid.deinit();
+
     var count: usize = 0;
-    var candidates = std.array_list.AlignedManaged(Pos, null).init(alloc);
+    var candidates = std.array_list.AlignedManaged(Pos, null).init(allocator);
     defer candidates.deinit();
 
     while (true) {
@@ -52,8 +50,16 @@ pub fn solve2(grid: *Grid) !usize {
     return count;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
-    alloc = std.testing.allocator;
     const input =
         \\..@@.@@@@.
         \\@@@.@.@.@@
@@ -67,10 +73,7 @@ test "example" {
         \\@.@.@@@.@.
     ;
 
-    var grid: *Grid = try parse(input);
-    defer alloc.destroy(grid);
-    defer grid.deinit();
-
-    try std.testing.expectEqual(@as(usize, 13), try solve1(grid));
-    try std.testing.expectEqual(@as(usize, 43), try solve2(grid));
+    const allocator = std.testing.allocator;
+    try std.testing.expectEqual(@as(usize, 13), try part1(input, allocator));
+    try std.testing.expectEqual(@as(usize, 43), try part2(input, allocator));
 }

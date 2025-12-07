@@ -1,18 +1,21 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 
 pub var alloc: std.mem.Allocator = undefined;
 
-pub fn parse(input: []const u8) !std.array_list.AlignedManaged([]const u8, null) {
+pub fn parse(input: []const u8, allocator: std.mem.Allocator) !std.array_list.AlignedManaged([]const u8, null) {
     var iterator = std.mem.tokenizeScalar(u8, input, '\n');
-    var res = std.array_list.AlignedManaged([]const u8, null).init(alloc);
+    var res = std.array_list.AlignedManaged([]const u8, null).init(allocator);
     while (iterator.next()) |line| {
         try res.append(line);
     }
     return res;
 }
 
-pub fn solve1(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const data = try parse(input, allocator);
+    defer data.deinit();
+
     const numbers = data.items[0 .. data.items.len - 1];
     const ops = data.items[data.items.len - 1];
 
@@ -46,7 +49,10 @@ pub fn solve1(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
     return result;
 }
 
-pub fn solve2(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const data = try parse(input, allocator);
+    defer data.deinit();
+
     const numbers = data.items[0 .. data.items.len - 1];
     const ops = data.items[data.items.len - 1];
 
@@ -98,16 +104,23 @@ fn parseNumber(numbers: []const []const u8, pos: usize) usize {
     return number;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
-    alloc = std.testing.allocator;
     const input =
         \\123 328  51 64 
         \\ 45 64  387 23 
         \\  6 98  215 314
         \\*   +   *   +  
     ;
-    var lines = try parse(input);
-    defer lines.deinit();
-    try std.testing.expectEqual(@as(usize, 4277556), try solve1(lines));
-    try std.testing.expectEqual(@as(usize, 3263827), try solve2(lines));
+    const allocator = std.testing.allocator;
+    try std.testing.expectEqual(@as(usize, 4277556), try part1(input, allocator));
+    try std.testing.expectEqual(@as(usize, 3263827), try part2(input, allocator));
 }

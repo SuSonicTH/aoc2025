@@ -1,18 +1,13 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 const Grid = @import("Grid.zig");
 
-pub var alloc: std.mem.Allocator = undefined;
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var grid = try Grid.init(input, allocator);
+    defer grid.deinit();
 
-pub fn parse(input: []const u8) !*Grid {
-    const ptr = try alloc.create(Grid);
-    ptr.* = try Grid.init(input, alloc);
-    return ptr;
-}
-
-pub fn solve1(grid: *Grid) !usize {
-    var beams = try alloc.alloc(bool, grid.width);
-    defer alloc.free(beams);
+    var beams = try allocator.alloc(bool, grid.width);
+    defer allocator.free(beams);
     @memset(beams, false);
 
     const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
@@ -32,9 +27,12 @@ pub fn solve1(grid: *Grid) !usize {
     return split;
 }
 
-pub fn solve2(grid: *Grid) !usize {
-    var beams = try alloc.alloc(usize, grid.width);
-    defer alloc.free(beams);
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var grid = try Grid.init(input, allocator);
+    defer grid.deinit();
+
+    var beams = try allocator.alloc(usize, grid.width);
+    defer allocator.free(beams);
     @memset(beams, 0);
 
     const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
@@ -57,8 +55,16 @@ pub fn solve2(grid: *Grid) !usize {
     return timelines;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
-    alloc = std.testing.allocator;
     const input =
         \\.......S.......
         \\...............
@@ -77,10 +83,7 @@ test "example" {
         \\.^.^.^.^.^...^.
         \\...............
     ;
-    var grid: *Grid = try parse(input);
-    defer alloc.destroy(grid);
-    defer grid.deinit();
-
-    try std.testing.expectEqual(@as(usize, 21), try solve1(grid));
-    try std.testing.expectEqual(@as(usize, 40), try solve2(grid));
+    const allocator = std.testing.allocator;
+    try std.testing.expectEqual(@as(usize, 21), try part1(input, allocator));
+    try std.testing.expectEqual(@as(usize, 40), try part2(input, allocator));
 }

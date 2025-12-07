@@ -1,5 +1,5 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 
 pub var alloc: std.mem.Allocator = undefined;
 
@@ -8,8 +8,8 @@ const Range = struct {
     to: usize,
 };
 
-pub fn parse(input: []const u8) ![]Range {
-    var res = std.array_list.AlignedManaged(Range, null).init(std.heap.page_allocator);
+pub fn parse(input: []const u8, allocator: std.mem.Allocator) ![]Range {
+    var res = std.array_list.AlignedManaged(Range, null).init(allocator);
     var ranges = std.mem.tokenizeScalar(u8, input[0 .. input.len - 1], ',');
     while (ranges.next()) |range| {
         const dashPos = std.mem.indexOfScalar(u8, range, '-').?;
@@ -21,7 +21,10 @@ pub fn parse(input: []const u8) ![]Range {
     return try res.toOwnedSlice();
 }
 
-pub fn solve1(ranges: []Range) !usize {
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const ranges = try parse(input, allocator);
+    defer allocator.free(ranges);
+
     var sum: usize = 0;
     for (ranges) |range| {
         for (range.from..range.to + 1) |item| {
@@ -46,7 +49,10 @@ fn isInvalid1(number: usize) !bool {
     return false;
 }
 
-pub fn solve2(ranges: []Range) !usize {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const ranges = try parse(input, allocator);
+    defer allocator.free(ranges);
+
     var sum: usize = 0;
     for (ranges) |range| {
         for (range.from..range.to + 1) |item| {
@@ -83,19 +89,29 @@ fn isSubSeqInvalid(str: []const u8, seqLen: usize) !bool {
     return true;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
     const input =
         \\11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124
         \\
     ;
-    const data = try parse(input);
-    try std.testing.expectEqual(@as(usize, 1227775554), try solve1(data));
+    try std.testing.expectEqual(@as(usize, 1227775554), try part1(input, std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 4174379265), try part2(input, std.testing.allocator));
+}
 
+test "isInvalid2" {
     try std.testing.expectEqual(true, try isInvalid2(99));
     try std.testing.expectEqual(true, try isInvalid2(111));
     try std.testing.expectEqual(false, try isInvalid2(110));
     try std.testing.expectEqual(true, try isInvalid2(565656));
     try std.testing.expectEqual(false, try isInvalid2(5656565));
     try std.testing.expectEqual(false, try isInvalid2(56565650));
-    try std.testing.expectEqual(@as(usize, 4174379265), try solve2(data));
 }

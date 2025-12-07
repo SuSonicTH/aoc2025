@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ $# -ne 0 ]; then
-    zig test src/2025/day${1}.zig
+    zig test src/day${1}.zig
 else
-    echo "expecting day as argument i.e. ./run 2"
+    time find src/ -type f | grep -E "day[0-9]+\.zig" | sort | xargs -I {} zig test {}
 fi
 

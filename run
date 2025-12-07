@@ -1,8 +1,7 @@
 #!/bin/bash
 
-DAY=""
 if [ $# -ne 0 ]; then
-    DAY="-Dday=$1"
+    zig run src/day${1}.zig -Doptimize=ReleaseFast
+else
+    time find src/ -type f | grep -E "day[0-9]+\.zig" | sort | xargs -I {} zig run {} -Doptimize=ReleaseFast
 fi
-
-zig build run $DAY -Doptimize=ReleaseFast

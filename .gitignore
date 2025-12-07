@@ -1,4 +1,4 @@
-.token
+.session
 .zig-cache/
 zig-out/
-src/*/*.txt
+src/day*.txt

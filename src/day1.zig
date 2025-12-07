@@ -1,10 +1,8 @@
 const std = @import("std");
-const aozig = @import("aozig");
+const stdout = @import("stdout.zig");
 
-pub var alloc: std.mem.Allocator = undefined;
-
-pub fn parse(input: []const u8) ![]i32 {
-    var res = std.array_list.AlignedManaged(i32, null).init(std.heap.page_allocator);
+fn parse(input: []const u8, allocator: std.mem.Allocator) ![]i32 {
+    var res = std.array_list.AlignedManaged(i32, null).init(allocator);
     var lines = std.mem.tokenizeScalar(u8, input, '\n');
 
     while (lines.next()) |line| {
@@ -15,7 +13,10 @@ pub fn parse(input: []const u8) ![]i32 {
     return try res.toOwnedSlice();
 }
 
-pub fn solve1(data: []i32) !usize {
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const data = try parse(input, allocator);
+    defer allocator.free(data);
+
     var position: i32 = 50;
     var zeroes: usize = 0;
 
@@ -26,7 +27,10 @@ pub fn solve1(data: []i32) !usize {
     return zeroes;
 }
 
-pub fn solve2(data: []i32) !i32 {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !i32 {
+    const data = try parse(input, allocator);
+    defer allocator.free(data);
+
     var position: i32 = 50;
     var zeroes: i32 = 0;
     for (data) |item| {
@@ -46,6 +50,15 @@ pub fn solve2(data: []i32) !i32 {
     return zeroes;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
     const input =
         \\L68
@@ -59,9 +72,10 @@ test "example" {
         \\R14
         \\L82
     ;
-    _ = try parse(input);
-    try std.testing.expectEqual(@as(usize, 3), try solve1(try parse(input)));
-    try std.testing.expectEqual(@as(i32, 10), try solve2(try parse("R1000")));
-    try std.testing.expectEqual(@as(i32, 1), try solve2(try parse("L51")));
-    try std.testing.expectEqual(@as(i32, 6), try solve2(try parse(input)));
+    const allocator = std.testing.allocator;
+
+    try std.testing.expectEqual(@as(usize, 3), try part1(input, allocator));
+    try std.testing.expectEqual(@as(i32, 10), try part2("R1000", allocator));
+    try std.testing.expectEqual(@as(i32, 1), try part2("L51", allocator));
+    try std.testing.expectEqual(@as(i32, 6), try part2(input, allocator));
 }

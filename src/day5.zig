@@ -1,7 +1,5 @@
 const std = @import("std");
-const aozig = @import("aozig");
-
-pub var alloc: std.mem.Allocator = undefined;
+const stdout = @import("stdout.zig");
 
 const Range = struct {
     from: usize,
@@ -28,12 +26,12 @@ const Data = struct {
     }
 };
 
-pub fn parse(input: []const u8) !Data {
+pub fn parse(input: []const u8, allocator: std.mem.Allocator) !Data {
     var lines = std.mem.tokenizeScalar(u8, input, '\n');
 
     var data: Data = .{
-        .fresh = std.array_list.AlignedManaged(Range, null).init(alloc),
-        .products = std.array_list.AlignedManaged(usize, null).init(alloc),
+        .fresh = std.array_list.AlignedManaged(Range, null).init(allocator),
+        .products = std.array_list.AlignedManaged(usize, null).init(allocator),
     };
 
     while (lines.next()) |range| {
@@ -52,7 +50,10 @@ pub fn parse(input: []const u8) !Data {
     return data;
 }
 
-pub fn solve1(data: Data) usize {
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    const data = try parse(input, allocator);
+    defer data.deinit();
+
     var count: usize = 0;
     for (data.products.items) |id| {
         if (data.isFresh(id)) {
@@ -62,7 +63,10 @@ pub fn solve1(data: Data) usize {
     return count;
 }
 
-pub fn solve2(data: Data) !usize {
+pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var data = try parse(input, allocator);
+    defer data.deinit();
+
     var fresh = data.fresh;
     std.mem.sort(Range, fresh.items, {}, rangeSort);
 
@@ -90,8 +94,16 @@ fn rangeSort(_: void, a: Range, b: Range) bool {
     return a.from < b.from;
 }
 
+pub fn main() !void {
+    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
+    const input = @embedFile(day ++ ".txt");
+    const allocator = std.heap.smp_allocator;
+
+    stdout.printfl("{s} part1: {any} ", .{ day, part1(input, allocator) });
+    stdout.printfl("part2: {any} \n", .{part2(input, allocator)});
+}
+
 test "example" {
-    alloc = std.testing.allocator;
     const input =
         \\3-5
         \\10-14
@@ -105,9 +117,8 @@ test "example" {
         \\17
         \\32
     ;
-    const data: Data = try parse(input);
-    defer data.deinit();
+    const allocator = std.testing.allocator;
 
-    try std.testing.expectEqual(@as(usize, 3), solve1(data));
-    try std.testing.expectEqual(@as(usize, 14), try solve2(data));
+    try std.testing.expectEqual(@as(usize, 3), part1(input, allocator));
+    try std.testing.expectEqual(@as(usize, 14), try part2(input, allocator));
 }

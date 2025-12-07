@@ -1,9 +1,0 @@
-#!/bin/bash
-
-DAY=""
-if [ $# -ne 0 ]; then
-    DAY="-Dday=$1"
-fi
-
-zig build run $DAY -Doptimize=ReleaseFast -- bench 100
-
