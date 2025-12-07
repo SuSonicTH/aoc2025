@@ -34,13 +34,10 @@ pub fn solve1(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
             if (n == 0) {
                 calc = number;
             } else {
-                const op = ops[pos];
-                if (op == '+') {
-                    calc += number;
-                } else if (op == '*') {
-                    calc *= number;
-                } else {
-                    @panic("unknown operator expecting +/*");
+                switch (ops[pos]) {
+                    '+' => calc += number,
+                    '*' => calc *= number,
+                    else => @panic("unknown operator expecting +/*"),
                 }
             }
         }
@@ -51,9 +48,55 @@ pub fn solve1(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
 }
 
 pub fn solve2(data: std.array_list.AlignedManaged([]const u8, null)) !usize {
-    const result: usize = 0;
-    _ = data;
-    return result;
+    const numbers = data.items[0 .. data.items.len - 1];
+    const ops = data.items[data.items.len - 1];
+
+    var result: usize = 0;
+    var pos: usize = ops.len - 1;
+    while (pos > 0) {
+        var o = pos;
+        while (ops[o] == ' ') o -= 1;
+        const op = ops[o];
+
+        var firstNumber: bool = true;
+        var calc: usize = 0;
+        while (pos >= o) {
+            const number = parseNumber(numbers, pos);
+            if (firstNumber) {
+                calc = number;
+                firstNumber = false;
+            } else {
+                switch (op) {
+                    '+' => calc += number,
+                    '*' => calc *= number,
+                    else => @panic("unknown operator expecting +/*"),
+                }
+            }
+            if (pos == 0) {
+                return result + calc;
+            }
+            pos -= 1;
+        }
+        result += calc;
+        pos -= 1;
+    }
+    unreachable;
+}
+
+fn parseNumber(numbers: []const []const u8, pos: usize) usize {
+    var number: usize = 0;
+    var firstDigit: bool = true;
+    for (0..numbers.len) |p| {
+        if (numbers[p][pos] >= '0' and numbers[p][pos] <= '9') {
+            if (!firstDigit) {
+                number *= 10;
+            } else {
+                firstDigit = false;
+            }
+            number += (numbers[p][pos] - '0');
+        }
+    }
+    return number;
 }
 
 test "example" {
@@ -62,10 +105,10 @@ test "example" {
         \\123 328  51 64 
         \\ 45 64  387 23 
         \\  6 98  215 314
-        \\*   +   *   +
+        \\*   +   *   +  
     ;
     var lines = try parse(input);
     defer lines.deinit();
     try std.testing.expectEqual(@as(usize, 4277556), try solve1(lines));
-    //try std.testing.expectEqual(@as(usize, 3263827), try solve2(lines));
+    try std.testing.expectEqual(@as(usize, 3263827), try solve2(lines));
 }
