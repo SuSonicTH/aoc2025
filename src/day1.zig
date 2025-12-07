@@ -1,5 +1,5 @@
 const std = @import("std");
-const stdout = @import("stdout.zig");
+pub const stdout = @import("stdout.zig");
 
 fn parse(input: []const u8, allocator: std.mem.Allocator) ![]i32 {
     var res = std.array_list.AlignedManaged(i32, null).init(allocator);
@@ -51,8 +51,7 @@ pub fn part2(input: []const u8, allocator: std.mem.Allocator) !i32 {
 }
 
 pub fn main() !void {
-    const day = comptime (@src().file[0..std.mem.indexOfScalar(u8, @src().file, '.').?]);
-    try @import("main.zig").aocRun(day, stdout, part1, part2);
+    try @import("main.zig").aocRun(@src(), @This());
 }
 
 test "example" {

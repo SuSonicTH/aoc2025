@@ -1,24 +1,25 @@
 const std = @import("std");
 
-pub fn aocRun(comptime day: []const u8, comptime stdout: anytype, part1: anytype, part2: anytype) !void {
+pub fn aocRun(comptime src: anytype, run: anytype) !void {
+    const day = comptime (src.file[0..std.mem.indexOfScalar(u8, src.file, '.').?]);
     const input = @embedFile(day ++ ".txt");
     const allocator = std.heap.smp_allocator;
 
-    stdout.printfl("{s}\n", .{day});
+    run.stdout.printfl("{s}\n", .{day});
 
     const start1 = std.time.nanoTimestamp();
-    const result1 = part1(input, allocator);
+    const result1 = run.part1(input, allocator);
     const run1 = @as(f128, @floatFromInt(std.time.nanoTimestamp() - start1));
 
-    stdout.print("      part1: {any} ", .{result1});
-    printTime(stdout, run1);
+    run.stdout.print("      part1: {any} ", .{result1});
+    printTime(run.stdout, run1);
 
     const start2 = std.time.nanoTimestamp();
-    const result2 = part2(input, allocator);
+    const result2 = run.part2(input, allocator);
     const run2 = @as(f128, @floatFromInt(std.time.nanoTimestamp() - start2));
 
-    stdout.printfl("      part2: {any} ", .{result2});
-    printTime(stdout, run2);
+    run.stdout.printfl("      part2: {any} ", .{result2});
+    printTime(run.stdout, run2);
 }
 
 fn printTime(stdout: anytype, time: f128) void {
