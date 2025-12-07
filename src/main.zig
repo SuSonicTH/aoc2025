@@ -23,12 +23,14 @@ pub fn aocRun(comptime src: anytype, run: anytype) !void {
 }
 
 fn printTime(stdout: anytype, time: f128) void {
-    if (time > 100000000) {
-        stdout.printfl("in {d:.0}ms\n", .{time / 1000000});
-    } else if (time > 1000000) {
-        stdout.printfl("in {d:.2}ms\n", .{time / 1000000});
-    } else if (time > 1000) {
+    if (time > 10_000_000) {
+        stdout.printfl("in {d:.0}ms\n", .{time / 1_000_000});
+    } else if (time > 1_000_000) {
+        stdout.printfl("in {d:.2}ms\n", .{time / 1_000_000});
+    } else if (time > 10_000) {
         stdout.printfl("in {d:.0}μs\n", .{time / 1000});
+    } else if (time > 1000) {
+        stdout.printfl("in {d:.2}μs\n", .{time / 1000});
     } else {
         stdout.printfl("in {d:}ns\n", .{time});
     }
