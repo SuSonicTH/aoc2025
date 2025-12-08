@@ -4,10 +4,11 @@ SESSION=`cat .session`
 
 if [ $# -ne 0 ]; then
     DAY=$1;
-    cp template.zig /src/day${DAY}.zig
-    curl -b "session=$session" "https://adventofcode.com/2023/day/${DAY}/input" -o src/day${DAY}.txt
-    git add src/day${day}
+    cp template.zig ./src/day${DAY}.zig
+    curl -b "session=$SESSION" "https://adventofcode.com/2023/day/${DAY}/input" -o ./src/day${DAY}.txt
+    git add ./src/day${DAY}.zig
     git commit -m "starting day $DAY"
 else
     echo "expecting day as argument i.e. ./run 2"
 fi
+
