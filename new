@@ -5,7 +5,7 @@ SESSION=`cat .session`
 if [ $# -ne 0 ]; then
     DAY=$1;
     cp template.zig ./src/day${DAY}.zig
-    curl -b "session=$SESSION" "https://adventofcode.com/2023/day/${DAY}/input" -o ./src/day${DAY}.txt
+    curl -b "session=$SESSION" "https://adventofcode.com/2025/day/${DAY}/input" -o ./src/day${DAY}.txt
     git add ./src/day${DAY}.zig
     git commit -m "starting day $DAY"
 else
