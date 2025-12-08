@@ -67,6 +67,51 @@ const Data = struct {
     }
 };
 
+const Circuit = struct {
+    circuits: std.array_list.AlignedManaged(usize, null),
+    boxes: usize,
+
+    fn init(boxes: usize, allocator: std.mem.Allocator) !Circuit {
+        var circuits = std.array_list.AlignedManaged(usize, null).init(allocator);
+        try circuits.append(1);
+        return .{
+            .circuits = circuits,
+            .boxes = boxes,
+        };
+    }
+
+    fn deinit(self: *Circuit) void {
+        self.circuits.deinit();
+    }
+
+    fn getNew(self: *Circuit) !usize {
+        for (self.circuits.items, 0..) |c, i| {
+            if (c == 0) {
+                return i;
+            }
+        }
+        try self.circuits.append(0);
+        return self.circuits.items.len - 1;
+    }
+
+    fn add(self: *Circuit, circuit: usize, v: usize) void {
+        self.circuits.items[circuit] += v;
+    }
+
+    fn remove(self: *Circuit, circuit: usize) void {
+        self.circuits.items[circuit] = 0;
+    }
+
+    fn getSorted(self: *Circuit) []usize {
+        std.mem.sortUnstable(usize, self.circuits.items, {}, std.sort.desc(usize));
+        return self.circuits.items;
+    }
+
+    fn allConnected(self: *Circuit) bool {
+        return self.circuits.items[1] == self.boxes;
+    }
+};
+
 var testing = false;
 
 pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
@@ -76,48 +121,83 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
     const boxes = data.boxes;
     const pairs = data.pairs;
 
-    var circuit: usize = 0;
+    var circuits = try Circuit.init(boxes.items.len, allocator);
+    defer circuits.deinit();
+
     const maximumConenctions: usize = if (testing) 10 else 1000;
     for (pairs.items[0..maximumConenctions]) |pair| {
         if (pair.a.circuit != pair.b.circuit or pair.a.circuit == 0) {
             if (pair.a.circuit == 0 and pair.b.circuit == 0) {
-                circuit += 1;
-                pair.a.circuit = circuit;
-                pair.b.circuit = circuit;
+                const c = try circuits.getNew();
+                circuits.add(c, 2);
+                pair.a.circuit = c;
+                pair.b.circuit = c;
             } else if (pair.a.circuit == 0) {
                 pair.a.circuit = pair.b.circuit;
+                circuits.add(pair.a.circuit, 1);
             } else if (pair.b.circuit == 0) {
                 pair.b.circuit = pair.a.circuit;
+                circuits.add(pair.b.circuit, 1);
             } else {
-                circuit += 1;
                 const ca = pair.a.circuit;
                 const cb = pair.b.circuit;
                 for (boxes.items) |*item| {
-                    if (item.circuit == ca or item.circuit == cb) {
-                        item.circuit = circuit;
+                    if (item.circuit == cb) {
+                        item.circuit = ca;
+                        circuits.add(ca, 1);
                     }
                 }
+                circuits.remove(cb);
             }
         }
     }
 
-    var circuits = try allocator.alloc(usize, circuit + 1);
-    defer allocator.free(circuits);
-    @memset(circuits, 0);
-
-    for (boxes.items) |box| {
-        if (box.circuit != 0) {
-            circuits[box.circuit] += 1;
-        }
-    }
-    std.mem.sort(usize, circuits, {}, std.sort.desc(usize));
-
-    return circuits[0] * circuits[1] * circuits[2];
+    const sorted = circuits.getSorted();
+    return sorted[0] * sorted[1] * sorted[2];
 }
 
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    _ = input;
-    _ = allocator;
+    var data = try Data.init(input, allocator);
+    defer data.deinit();
+
+    const boxes = data.boxes;
+    const pairs = data.pairs;
+
+    var circuits = try Circuit.init(boxes.items.len, allocator);
+    defer circuits.deinit();
+
+    for (pairs.items) |pair| {
+        if (pair.a.circuit != pair.b.circuit or pair.a.circuit == 0) {
+            if (pair.a.circuit == 0 and pair.b.circuit == 0) {
+                const c = try circuits.getNew();
+                circuits.add(c, 2);
+                pair.a.circuit = c;
+                pair.b.circuit = c;
+            } else if (pair.a.circuit == 0) {
+                pair.a.circuit = pair.b.circuit;
+                circuits.add(pair.a.circuit, 1);
+            } else if (pair.b.circuit == 0) {
+                pair.b.circuit = pair.a.circuit;
+                circuits.add(pair.b.circuit, 1);
+            } else {
+                const ca = pair.a.circuit;
+                const cb = pair.b.circuit;
+                const replace = if (ca < cb) cb else ca;
+                const with = if (ca < cb) ca else cb;
+                for (boxes.items) |*item| {
+                    if (item.circuit == replace) {
+                        item.circuit = with;
+                        circuits.add(with, 1);
+                    }
+                }
+                circuits.remove(replace);
+            }
+            if (circuits.allConnected()) {
+                return @as(usize, @intCast(pair.a.x)) * @as(usize, @intCast(pair.b.x));
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -150,5 +230,9 @@ test "example" {
         \\425,690,689
     ;
     try std.testing.expectEqual(@as(usize, 40), try part1(input, std.testing.allocator));
-    try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 25272), try part2(input, std.testing.allocator));
+
+    testing = false;
+    try std.testing.expectEqual(@as(usize, 330786), try part1(@embedFile("day8.txt"), std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 3276581616), try part2(@embedFile("day8.txt"), std.testing.allocator));
 }
