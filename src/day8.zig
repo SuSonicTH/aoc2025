@@ -8,40 +8,73 @@ const Box = struct {
     circuit: usize = 0,
 };
 
-const Distance = struct {
+const Pair = struct {
     a: *Box,
     b: *Box,
     distance: u64,
 };
 
-var testing = false;
-pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
-    var lines = std.mem.tokenizeScalar(u8, input, '\n');
-    var boxes = std.array_list.AlignedManaged(Box, null).init(allocator);
-    defer boxes.deinit();
+const Data = struct {
+    boxes: std.array_list.AlignedManaged(Box, null),
+    pairs: std.array_list.AlignedManaged(Pair, null),
 
-    while (lines.next()) |line| {
-        var numbers = std.mem.tokenizeScalar(u8, line, ',');
-        try boxes.append(.{
-            .x = try std.fmt.parseInt(i32, numbers.next().?, 10),
-            .y = try std.fmt.parseInt(i32, numbers.next().?, 10),
-            .z = try std.fmt.parseInt(i32, numbers.next().?, 10),
-        });
-    }
+    fn init(input: []const u8, allocator: std.mem.Allocator) !Data {
+        var lines = std.mem.tokenizeScalar(u8, input, '\n');
+        var boxes = std.array_list.AlignedManaged(Box, null).init(allocator);
 
-    var pairs = std.array_list.AlignedManaged(Distance, null).init(allocator);
-    defer pairs.deinit();
-
-    for (0..boxes.items.len) |a| {
-        for (a + 1..boxes.items.len) |b| {
-            try pairs.append(.{
-                .a = &boxes.items[a],
-                .b = &boxes.items[b],
-                .distance = getDistance(boxes.items[a], boxes.items[b]),
+        while (lines.next()) |line| {
+            var numbers = std.mem.tokenizeScalar(u8, line, ',');
+            try boxes.append(.{
+                .x = try std.fmt.parseInt(i32, numbers.next().?, 10),
+                .y = try std.fmt.parseInt(i32, numbers.next().?, 10),
+                .z = try std.fmt.parseInt(i32, numbers.next().?, 10),
             });
         }
+
+        var pairs = std.array_list.AlignedManaged(Pair, null).init(allocator);
+
+        for (0..boxes.items.len) |a| {
+            for (a + 1..boxes.items.len) |b| {
+                try pairs.append(.{
+                    .a = &boxes.items[a],
+                    .b = &boxes.items[b],
+                    .distance = getDistance(boxes.items[a], boxes.items[b]),
+                });
+            }
+        }
+        std.mem.sortUnstable(Pair, pairs.items, {}, distanceSort);
+
+        return .{
+            .boxes = boxes,
+            .pairs = pairs,
+        };
     }
-    std.mem.sortUnstable(Distance, pairs.items, {}, distanceSort);
+
+    fn deinit(self: *Data) void {
+        self.boxes.deinit();
+        self.pairs.deinit();
+    }
+
+    fn getDistance(a: Box, b: Box) u64 {
+        const dx = @as(i64, a.x - b.x);
+        const dy = @as(i64, a.y - b.y);
+        const dz = @as(i64, a.z - b.z);
+        return @abs(dx * dx + dy * dy + dz * dz);
+    }
+
+    fn distanceSort(_: void, a: Pair, b: Pair) bool {
+        return a.distance < b.distance;
+    }
+};
+
+var testing = false;
+
+pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
+    var data = try Data.init(input, allocator);
+    defer data.deinit();
+
+    const boxes = data.boxes;
+    const pairs = data.pairs;
 
     var circuit: usize = 0;
     const maximumConenctions: usize = if (testing) 10 else 1000;
@@ -82,15 +115,6 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
     return circuits[0] * circuits[1] * circuits[2];
 }
 
-fn getDistance(a: Box, b: Box) u64 {
-    const dx = @as(i64, a.x - b.x);
-    const dy = @as(i64, a.y - b.y);
-    const dz = @as(i64, a.z - b.z);
-    return @abs(dx * dx + dy * dy + dz * dz);
-}
-fn distanceSort(_: void, a: Distance, b: Distance) bool {
-    return a.distance < b.distance;
-}
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
     _ = input;
     _ = allocator;
