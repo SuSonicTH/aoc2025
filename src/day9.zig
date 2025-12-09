@@ -38,10 +38,27 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
     return max;
 }
 
+fn fullyCoverd(p1: Point, p2: Point) bool {
+    _ = p1;
+    _ = p2;
+    return false;
+}
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    _ = input;
-    _ = allocator;
-    return 0;
+    var points = try parse(input, allocator);
+    defer points.deinit();
+
+    var max: usize = 0;
+    for (0..points.items.len) |a| {
+        const p1 = points.items[a];
+        for (a + 1..points.items.len) |b| {
+            const p2 = points.items[b];
+            const area = (@max(p1.x, p2.x) - @min(p1.x, p2.x) + 1) * (@max(p1.y, p2.y) - @min(p1.y, p2.y) + 1);
+            if (area > max and fullyCoverd(p1, p2)) {
+                max = area;
+            }
+        }
+    }
+    return max;
 }
 
 pub fn main() !void {
@@ -60,5 +77,5 @@ test "example" {
         \\7,3
     ;
     try std.testing.expectEqual(@as(usize, 50), try part1(input, std.testing.allocator));
-    try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 24), try part2(input, std.testing.allocator));
 }
