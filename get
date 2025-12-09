@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SESSION=`cat .session`
+
+if [ $# -ne 0 ]; then
+    DAY=$1;
+    curl -b "session=$SESSION" "https://adventofcode.com/2025/day/${DAY}/input" -o ./src/day${DAY}.txt
+else
+    find src -type f | grep -F 'src/day' | sed -r 's/src\/day([0-9]+).+/\1/g' | sort | xargs -I {} ./get {}
+fi
+
