@@ -1,9 +1,9 @@
 const std = @import("std");
 pub const stdout = @import("stdout.zig");
-const Grid = @import("Grid.zig");
+const common = @import("common.zig");
 
 pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
-    var grid = try Grid.init(input, allocator);
+    var grid = try common.readGrid(input, allocator);
     defer grid.deinit();
 
     var count: usize = 0;
@@ -23,7 +23,7 @@ const Pos = struct {
 };
 
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    var grid = try Grid.init(input, allocator);
+    var grid = try common.readGrid(input, allocator);
     defer grid.deinit();
 
     var count: usize = 0;
