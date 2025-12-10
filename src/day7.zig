@@ -1,16 +1,16 @@
 const std = @import("std");
 pub const stdout = @import("stdout.zig");
-const Grid = @import("Grid.zig");
+const common = @import("common.zig");
 
 pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
-    var grid = try Grid.init(input, allocator);
+    var grid = try common.readGrid(input, allocator);
     defer grid.deinit();
 
     var beams = try allocator.alloc(bool, grid.width);
     defer allocator.free(beams);
     @memset(beams, false);
 
-    const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
+    const start = std.mem.indexOfScalar(u8, grid.data, 'S').?;
     beams[start] = true;
 
     var split: usize = 0;
@@ -28,14 +28,14 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
 }
 
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    var grid = try Grid.init(input, allocator);
+    var grid = try common.readGrid(input, allocator);
     defer grid.deinit();
 
     var beams = try allocator.alloc(usize, grid.width);
     defer allocator.free(beams);
     @memset(beams, 0);
 
-    const start = std.mem.indexOfScalar(u8, grid.grid, 'S').?;
+    const start = std.mem.indexOfScalar(u8, grid.data, 'S').?;
     beams[start] = 1;
 
     for (1..grid.height - 1) |y| {
