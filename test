@@ -3,6 +3,12 @@
 if [ $# -ne 0 ]; then
     zig test src/day${1}.zig
 else
-    time find src/ -type f | grep -E "day[0-9]+\.zig" | sort | xargs -I {} zig test {}
+    for i in $(seq 1 12);
+    do
+        if [ -f src/day${i}.zig ]; then
+            echo day $i
+            zig test src/day${i}.zig
+        fi
+    done
 fi
 

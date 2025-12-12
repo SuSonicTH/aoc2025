@@ -3,5 +3,10 @@
 if [ $# -ne 0 ]; then
     zig run src/day${1}.zig -Doptimize=ReleaseFast
 else
-    time find src/ -type f | grep -E "day[0-9]+\.zig" | sort | xargs -I {} zig run {} -Doptimize=ReleaseFast
+    for i in $(seq 1 12);
+    do
+        if [ -f src/day${i}.zig ]; then
+            zig run src/day${i}.zig -Doptimize=ReleaseFast
+        fi
+    done
 fi
