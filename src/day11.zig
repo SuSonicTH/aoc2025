@@ -10,23 +10,19 @@ const svr = nameToId("svr");
 const dac = nameToId("dac");
 const fft = nameToId("fft");
 
-fn parse(input: []const u8, allocator: std.mem.Allocator) ![][maxOutputs]u16 {
+fn parse(input: []const u8, devices: *[maxDevices + 1][maxOutputs]u16) !void {
     var lines = std.mem.tokenizeScalar(u8, input, '\n');
-    var devices = try allocator.alloc([maxOutputs]u16, maxDevices + 1);
-
     while (lines.next()) |line| {
         const d = nameToId(line);
-        var p: usize = 4;
-        var i: usize = 0;
-        while (p < line.len) {
-            const id = nameToId(line[p + 1 ..]);
-            devices[d][i] = id;
-            p += 4;
-            i += 1;
+        for (0..maxOutputs) |i| {
+            const idx = 4 + i * 4 + 1;
+            if (idx > line.len) {
+                devices[d][i] = 0;
+                break;
+            }
+            devices[d][i] = nameToId(line[idx..]);
         }
-        devices[d][i] = 0;
     }
-    return devices;
 }
 
 fn nameToId(name: []const u8) u16 {
@@ -34,12 +30,13 @@ fn nameToId(name: []const u8) u16 {
 }
 
 pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
-    const devices = try parse(input, allocator);
-    defer allocator.free(devices);
-    return countPaths1(devices, you);
+    _ = allocator;
+    var devices: [maxDevices + 1][maxOutputs]u16 = undefined;
+    try parse(input, &devices);
+    return countPaths1(&devices, you);
 }
 
-fn countPaths1(devices: [][maxOutputs]u16, device: u16) usize {
+fn countPaths1(devices: *[maxDevices + 1][maxOutputs]u16, device: u16) usize {
     var count: usize = 0;
     for (devices[device]) |output| {
         switch (output) {
@@ -52,13 +49,14 @@ fn countPaths1(devices: [][maxOutputs]u16, device: u16) usize {
 }
 
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    const devices = try parse(input, allocator);
-    defer allocator.free(devices);
+    _ = allocator;
+    var devices: [maxDevices + 1][maxOutputs]u16 = undefined;
+    try parse(input, &devices);
     var memo: [maxDevices * 4 + 1]?usize = @splat(null);
-    return countPaths2(devices, svr, &memo, false, false);
+    return countPaths2(&devices, svr, &memo, false, false);
 }
 
-fn countPaths2(devices: [][maxOutputs]u16, device: u16, memo: *[maxDevices * 4 + 1]?usize, passed_dac: bool, passed_fft: bool) usize {
+fn countPaths2(devices: *[maxDevices + 1][maxOutputs]u16, device: u16, memo: *[maxDevices * 4 + 1]?usize, passed_dac: bool, passed_fft: bool) usize {
     const memoKey = @as(usize, device) * 4 + @as(u2, @intFromBool(passed_dac)) * 2 + @intFromBool(passed_fft);
     if (memo[memoKey]) |cached| {
         return cached;
@@ -67,21 +65,16 @@ fn countPaths2(devices: [][maxOutputs]u16, device: u16, memo: *[maxDevices * 4 +
     var count: usize = 0;
     for (devices[device]) |output| {
         switch (output) {
-            0 => {
-                memo[memoKey] = count;
-                return count;
-            },
+            0 => break,
             dac => count += countPaths2(devices, output, memo, true, passed_fft),
             fft => count += countPaths2(devices, output, memo, passed_dac, true),
-            out => if (passed_dac and passed_fft) {
-                return 1;
-            } else {
-                return count;
-            },
+            out => return if (passed_dac and passed_fft) 1 else 0,
             else => count += countPaths2(devices, output, memo, passed_dac, passed_fft),
         }
     }
-    unreachable;
+
+    memo[memoKey] = count;
+    return count;
 }
 
 pub fn main() !void {
