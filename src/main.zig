@@ -1,6 +1,10 @@
 const std = @import("std");
+const Utf8Output = @import("Utf8Output.zig");
 
 pub fn aocRun(comptime src: anytype, run: anytype) !void {
+    Utf8Output.init();
+    defer Utf8Output.deinit();
+
     const day = comptime (src.file[0..std.mem.indexOfScalar(u8, src.file, '.').?]);
     const input = @embedFile(day ++ ".txt");
     const allocator = std.heap.smp_allocator;
