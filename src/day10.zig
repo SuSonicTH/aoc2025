@@ -1,13 +1,8 @@
 const std = @import("std");
 pub const stdout = @import("stdout.zig");
 
-const Lights = struct {
-    bulbs: u10,
-    mask: u10,
-};
-
 const Machine = struct {
-    lights: Lights,
+    lights: u10,
     buttons: []u10,
 };
 
@@ -23,36 +18,40 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
     while (lines.next()) |line| {
         const endOfLights = std.mem.indexOfScalar(u8, line, ']').?;
         var buttons = std.array_list.AlignedManaged(u10, null).init(alloc);
-
-        var start = std.mem.indexOfScalar(u8, line[endOfLights..], '(');
-        while (start != null) {
-            const end = std.mem.indexOfScalar(u8, line[start.?..], ')').?;
-            try buttons.append(getButton(line[start.? + 1 .. end]));
-            start = std.mem.indexOfScalar(u8, line[end..], '(');
+        var buttonIterator = std.mem.tokenizeScalar(u8, line[endOfLights + 1 ..], ')');
+        while (buttonIterator.next()) |button| {
+            if (button[1] == '(') {
+                try buttons.append(getButton(button[2..]));
+            }
         }
         try machines.append(.{
             .lights = getLights(line[1..endOfLights]),
             .buttons = try buttons.toOwnedSlice(),
         });
     }
-    return 0;
+
+    var count: usize = 0;
+    for (machines.items) |*machine| {
+        for (1..machine.buttons.len + 1) |numberOfButtons| {
+            if (hasSolution(machine, numberOfButtons)) {
+                count += numberOfButtons;
+                break;
+            }
+        }
+    }
+    return count;
 }
 
-fn getLights(lights: []const u8) Lights {
+fn getLights(lights: []const u8) u10 {
     var value: u10 = 0;
-    var mask: u10 = 0;
     var pos: u4 = 0;
     for (lights) |light| {
         if (light == '#') {
             value |= (@as(u10, 1) << pos);
         }
-        mask |= (@as(u10, 1) << pos);
         pos += 1;
     }
-    return .{
-        .bulbs = value,
-        .mask = mask,
-    };
+    return value;
 }
 
 fn getButton(button: []const u8) u10 {
@@ -63,6 +62,34 @@ fn getButton(button: []const u8) u10 {
         value |= (@as(u10, 1) << v);
     }
     return value;
+}
+
+fn hasSolution(machine: *Machine, numberOfButtons: usize) bool {
+    var state: [13]usize = undefined;
+    for (0..numberOfButtons) |i| {
+        state[i] = i;
+    }
+
+    while (true) {
+        var result: u10 = 0;
+        for (0..numberOfButtons) |i| {
+            result ^= machine.buttons[state[i]];
+        }
+
+        if (machine.lights == result) return true;
+
+        for (0..numberOfButtons) |i| {
+            const s = numberOfButtons - i - 1;
+            state[s] += 1;
+            if (state[s] == machine.buttons.len - i) {
+                state[s] = s;
+                if (s == 0) return false;
+            } else {
+                break;
+            }
+        }
+    }
+    unreachable;
 }
 
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
@@ -77,21 +104,31 @@ pub fn main() !void {
 
 test "example" {
     const input =
-        \\
+        \\[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+        \\[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
+        \\[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
     ;
-    try std.testing.expectEqual(@as(usize, 0), try part1(input, std.testing.allocator));
-    try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 1), try part1("[.##.] (1,2) {3,5,4,7}", std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 2), try part1("[.##.] (1) (2) {3,5,4,7}", std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 2), try part1("[.##.] (0) (1) (2) {3,5,4,7}", std.testing.allocator));
+
+    try std.testing.expectEqual(@as(usize, 2), try part1("[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}", std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 3), try part1("[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}", std.testing.allocator));
+    try std.testing.expectEqual(@as(usize, 2), try part1("[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}", std.testing.allocator));
+
+    try std.testing.expectEqual(@as(usize, 7), try part1(input, std.testing.allocator));
+    //try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
 }
 
 test "getLights" {
-    try std.testing.expectEqual(Lights{ .lights = 0, .mask = 1023 }, getLights(".........."));
-    try std.testing.expectEqual(Lights{ .lights = 1, .mask = 1023 }, getLights("#........."));
-    try std.testing.expectEqual(Lights{ .lights = 2, .mask = 1023 }, getLights(".#........"));
-    try std.testing.expectEqual(Lights{ .lights = 3, .mask = 511 }, getLights("##......."));
-    try std.testing.expectEqual(Lights{ .lights = 4, .mask = 255 }, getLights("..#....."));
-    try std.testing.expectEqual(Lights{ .lights = 5, .mask = 127 }, getLights("#.#...."));
-    try std.testing.expectEqual(Lights{ .lights = 6, .mask = 63 }, getLights(".##..."));
-    try std.testing.expectEqual(Lights{ .lights = 512, .mask = 1023 }, getLights(".........#"));
+    try std.testing.expectEqual(0, getLights(".........."));
+    try std.testing.expectEqual(1, getLights("#........."));
+    try std.testing.expectEqual(2, getLights(".#........"));
+    try std.testing.expectEqual(3, getLights("##......."));
+    try std.testing.expectEqual(4, getLights("..#....."));
+    try std.testing.expectEqual(5, getLights("#.#...."));
+    try std.testing.expectEqual(6, getLights(".##..."));
+    try std.testing.expectEqual(512, getLights(".........#"));
 }
 
 test "getButton" {
