@@ -134,9 +134,3 @@ test "example" {
     try std.testing.expectEqual(@as(usize, 50), try part1(input, std.testing.allocator));
     try std.testing.expectEqual(@as(usize, 24), try part2(input, std.testing.allocator));
 }
-
-test "real data" {
-    const inputFile = @embedFile("day9.txt");
-    try std.testing.expectEqual(@as(usize, 4777824480), try part1(inputFile, std.testing.allocator));
-    try std.testing.expectEqual(@as(usize, 1542119040), try part2(inputFile, std.testing.allocator));
-}

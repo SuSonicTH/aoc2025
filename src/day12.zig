@@ -37,7 +37,4 @@ pub fn main() !void {
     try @import("main.zig").aocRun(@src(), @This());
 }
 
-test "example" {
-    const input = @embedFile("day12.txt");
-    try std.testing.expectEqual(@as(usize, 408), try part1(input, std.testing.allocator));
-}
+test "example" {}

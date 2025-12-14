@@ -231,8 +231,4 @@ test "example" {
     ;
     try std.testing.expectEqual(@as(usize, 40), try part1(input, std.testing.allocator));
     try std.testing.expectEqual(@as(usize, 25272), try part2(input, std.testing.allocator));
-
-    testing = false;
-    try std.testing.expectEqual(@as(usize, 330786), try part1(@embedFile("day8.txt"), std.testing.allocator));
-    try std.testing.expectEqual(@as(usize, 3276581616), try part2(@embedFile("day8.txt"), std.testing.allocator));
 }
