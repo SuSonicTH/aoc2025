@@ -53,11 +53,15 @@ pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
     var devices: [maxDevices + 1][maxOutputs]u16 = undefined;
     try parse(input, &devices);
     var memo: [maxDevices * 4 + 1]?usize = @splat(null);
-    return countPaths2(&devices, svr, &memo, false, false);
+    return countPaths2(&devices, svr, &memo, 0);
 }
 
-fn countPaths2(devices: *[maxDevices + 1][maxOutputs]u16, device: u16, memo: *[maxDevices * 4 + 1]?usize, passed_dac: bool, passed_fft: bool) usize {
-    const memoKey = @as(usize, device) * 4 + @as(u2, @intFromBool(passed_dac)) * 2 + @intFromBool(passed_fft);
+const passed_dac: u2 = 1;
+const passed_fft: u2 = 2;
+const passed_both: u2 = 3;
+
+fn countPaths2(devices: *[maxDevices + 1][maxOutputs]u16, device: u16, memo: *[maxDevices * 4 + 1]?usize, passed: u2) usize {
+    const memoKey = @as(usize, device) * 4 + passed;
     if (memo[memoKey]) |cached| {
         return cached;
     }
@@ -66,10 +70,10 @@ fn countPaths2(devices: *[maxDevices + 1][maxOutputs]u16, device: u16, memo: *[m
     for (devices[device]) |output| {
         switch (output) {
             0 => break,
-            dac => count += countPaths2(devices, output, memo, true, passed_fft),
-            fft => count += countPaths2(devices, output, memo, passed_dac, true),
-            out => return if (passed_dac and passed_fft) 1 else 0,
-            else => count += countPaths2(devices, output, memo, passed_dac, passed_fft),
+            dac => count += countPaths2(devices, output, memo, passed | passed_dac),
+            fft => count += countPaths2(devices, output, memo, passed | passed_fft),
+            out => return if (passed == passed_both) 1 else 0,
+            else => count += countPaths2(devices, output, memo, passed),
         }
     }
 
