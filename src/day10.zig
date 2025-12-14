@@ -1,7 +1,7 @@
 const std = @import("std");
 pub const stdout = @import("stdout.zig");
 
-const Machine = struct {
+const Machine1 = struct {
     lights: u10,
     buttons: []u10,
 };
@@ -11,7 +11,7 @@ pub fn part1(input: []const u8, allocator: std.mem.Allocator) !usize {
     defer arena.deinit();
     const alloc = arena.allocator();
 
-    var machines = std.array_list.AlignedManaged(Machine, null).init(alloc);
+    var machines = std.array_list.AlignedManaged(Machine1, null).init(alloc);
     defer machines.deinit();
 
     var lines = std.mem.tokenizeScalar(u8, input, '\n');
@@ -64,7 +64,7 @@ fn getButton(button: []const u8) u10 {
     return value;
 }
 
-fn hasSolution(machine: *Machine, numberOfButtons: usize) bool {
+fn hasSolution(machine: *Machine1, numberOfButtons: usize) bool {
     var state: [13]usize = undefined;
     for (0..numberOfButtons) |i| {
         state[i] = i;
@@ -92,10 +92,49 @@ fn hasSolution(machine: *Machine, numberOfButtons: usize) bool {
     unreachable;
 }
 
+const Machine2 = struct {
+    buttons: [][]u8,
+    joltages: []u8,
+};
+
 pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
-    _ = input;
-    _ = allocator;
+    var arena = std.heap.ArenaAllocator.init(allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    var machines = std.array_list.AlignedManaged(Machine2, null).init(alloc);
+    defer machines.deinit();
+
+    var lines = std.mem.tokenizeScalar(u8, input, '\n');
+    while (lines.next()) |line| {
+        const endOfLights = std.mem.indexOfScalar(u8, line, ']').?;
+        var buttons = std.array_list.AlignedManaged([]u8, null).init(alloc);
+        var buttonIterator = std.mem.tokenizeScalar(u8, line[endOfLights + 1 ..], ')');
+        var joltages: []u8 = undefined;
+        while (buttonIterator.next()) |button| {
+            if (button[1] == '(') {
+                try buttons.append(try getListOfValues(button[2..], alloc));
+            } else {
+                joltages = try getListOfValues(button[2 .. button.len - 1], alloc);
+            }
+        }
+        stdout.printfl("{s}\n->{any}\n->{any}\n", .{ line, buttons.items, joltages });
+        try machines.append(.{
+            .buttons = try buttons.toOwnedSlice(),
+            .joltages = joltages,
+        });
+    }
+
     return 0;
+}
+
+fn getListOfValues(button: []const u8, allocator: std.mem.Allocator) ![]u8 {
+    var values = std.array_list.AlignedManaged(u8, null).init(allocator);
+    var numbers = std.mem.tokenizeScalar(u8, button, ',');
+    while (numbers.next()) |number| {
+        try values.append(try std.fmt.parseInt(u8, number, 10));
+    }
+    return values.toOwnedSlice();
 }
 
 pub fn main() !void {
@@ -117,7 +156,8 @@ test "example" {
     try std.testing.expectEqual(@as(usize, 2), try part1("[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}", std.testing.allocator));
 
     try std.testing.expectEqual(@as(usize, 7), try part1(input, std.testing.allocator));
-    //try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
+
+    try std.testing.expectEqual(@as(usize, 0), try part2(input, std.testing.allocator));
 }
 
 test "getLights" {
