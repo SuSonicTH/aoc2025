@@ -90,14 +90,9 @@ pub fn part2(input: []const u8, allocator: std.mem.Allocator) !usize {
 
 fn parseNumber(numbers: []const []const u8, pos: usize) usize {
     var number: usize = 0;
-    var firstDigit: bool = true;
     for (0..numbers.len) |p| {
         if (numbers[p][pos] >= '0' and numbers[p][pos] <= '9') {
-            if (!firstDigit) {
-                number *= 10;
-            } else {
-                firstDigit = false;
-            }
+            number *= 10;
             number += (numbers[p][pos] - '0');
         }
     }
