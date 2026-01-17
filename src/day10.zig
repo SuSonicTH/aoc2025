@@ -1,6 +1,5 @@
 const std = @import("std");
-pub const stdout = @im
-port("stdout.zig");
+pub const stdout = @import("stdout.zig");
 
 const Machine1 = struct {
     lights: u10,
